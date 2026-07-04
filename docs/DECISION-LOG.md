@@ -104,6 +104,21 @@ SaaS look; supporting dark mode and accessible focus states is expected of a top
 
 ---
 
+## A landing page separate from the submission form
+
+**Problem:** Should the home page *be* the submission form, or should the form live on its own
+page?
+
+**Decision I take:** The home page (`/`) is a short landing page that introduces Feedback Hub and
+has a clear "Submit Feedback" call to action. The form itself lives on its own route (`/submit`).
+
+**Why:** Each page then has a single job — the landing sells and directs, the form collects — which
+is cleaner separation of concerns and easier to maintain and test. It also reads as a more
+finished product than dropping visitors straight onto a raw form, and it leaves room to add things
+like recent activity or guidance to the landing later without touching the form.
+
+---
+
 ## Building in a clear order
 
 **Problem:** In what order should the features be built?
