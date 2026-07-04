@@ -38,8 +38,8 @@ export const createTicketSchema = z.object({
 
   // Screenshots are uploaded to storage first; here we only carry the resulting
   // URLs. Optional, and capped so a single submission can't attach an unlimited
-  // number of files.
-  screenshotUrls: z.array(z.url()).max(10, "Too many screenshots").optional().default([]),
+  // number of files. Callers treat a missing value as an empty list.
+  screenshotUrls: z.array(z.url()).max(10, "Too many screenshots").optional(),
 });
 
 export type CreateTicketInput = z.infer<typeof createTicketSchema>;
