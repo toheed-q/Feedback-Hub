@@ -86,6 +86,24 @@ matching uses the database's own search, so there's nothing extra to depend on.
 
 ---
 
+## A consistent, professional design system
+
+**Problem:** The app needs to look polished and feel consistent across every screen, not like a
+set of loosely styled pages.
+
+**Decision I take:** Commit to one design system up front: a neutral (zinc) base with a single
+indigo/violet accent used for primary actions, links and focus states; Geist as the typeface; an
+8-point spacing rhythm with restrained borders instead of heavy shadows; every control built only
+from the shadcn/ui component set; full light and dark theme support with proper contrast and
+visible focus states. Status and priority colours are defined once and reused everywhere.
+
+**Why:** Consistency is what makes an interface feel professional. Deciding the colours, type,
+spacing and components once — and pulling them from shared tokens — means every later screen looks
+like part of the same product with no guesswork. Indigo on a neutral base is a modern, trustworthy
+SaaS look; supporting dark mode and accessible focus states is expected of a top-tier app.
+
+---
+
 ## Building in a clear order
 
 **Problem:** In what order should the features be built?
