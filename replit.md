@@ -1,32 +1,38 @@
-# [Project name]
+# App
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+A single Next.js (App Router) application — no monorepo of separate services. Frontend pages and backend Route Handlers live together in one app.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- `pnpm --filter @workspace/app run dev` — run the Next.js dev server (binds to `$PORT`, defaults to 5000)
+- `pnpm run typecheck` — typecheck the app
+- `pnpm run build` — typecheck + build the app
+- `pnpm --filter @workspace/app run prisma:generate` — regenerate the Prisma client
+- `pnpm --filter @workspace/app run prisma:push` — push the Prisma schema to the database (dev only)
+- `pnpm --filter @workspace/app run prisma:studio` — open Prisma Studio
+- Required env: `DATABASE_URL` — Postgres connection string (currently empty; the user will provide a Supabase connection string later — do not block on it)
 
 ## Stack
 
-- pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- Next.js 16 (App Router, Turbopack), React 19, TypeScript 5
+- Styling: Tailwind CSS v4 + shadcn/ui
+- DB: PostgreSQL (Supabase, pending) via Prisma 7 (`prisma-client` generator, `@prisma/adapter-pg`)
+- Validation: Zod
+- Backend: Next.js Route Handlers under `artifacts/app/app/api/*`
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/app/app/` — pages and Route Handlers (App Router)
+- `artifacts/app/lib/prisma.ts` — Prisma client singleton (throws a clear error if `DATABASE_URL` is unset)
+- `artifacts/app/prisma/schema.prisma` — DB schema (source of truth)
+- `artifacts/app/components/` — shadcn/ui components
+- `scripts/post-merge.sh` — runs `pnpm install` and conditionally `prisma generate` after task merges
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- Migrated from a pnpm monorepo (Express API + Canvas mockup artifacts) to a single Next.js app per user request — everything (frontend + backend) lives in one artifact now.
+- The artifact was bootstrapped via the `react-vite` artifact type (only native option) and then its scaffold was replaced with the real Next.js app; only `.replit-artifact/artifact.toml`'s service commands were changed to run Next.js dev/build/start.
+- Prisma 7's `prisma-client` generator requires an adapter (`@prisma/adapter-pg`) at all times, even for local dev — `lib/prisma.ts` builds the adapter from `DATABASE_URL` and throws a clear runtime error if it's unset, instead of crashing at import time.
 
 ## Product
 
@@ -34,12 +40,13 @@ _Describe the high-level user-facing capabilities of this app once they exist._
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- DATABASE_URL should stay empty until the user explicitly provides a Supabase connection string — do not block setup or ask for it proactively.
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- The Replit dev container always has ambient `DATABASE_URL`/`PG*` env vars pointing at a local placeholder Postgres (`helium` host) even when `checkDatabase()` reports "not provisioned" — don't treat its presence as a real, usable database.
+- Prisma 7 with the `prisma-client` generator needs `@prisma/adapter-pg` (or another driver adapter) passed to `new PrismaClient({ adapter })` — omitting it throws `PrismaClientConstructorValidationError` even with a valid `DATABASE_URL`.
 
 ## Pointers
 
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+- See the `artifacts` skill for how the Next.js app is registered and routed as a single artifact.
