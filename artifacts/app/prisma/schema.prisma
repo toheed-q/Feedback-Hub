@@ -1,8 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../lib/generated/prisma"
@@ -12,9 +10,85 @@ datasource db {
   provider = "postgresql"
 }
 
-model Example {
+// ---------------------------------------------------------------------------
+// Fixed value lists. The database enforces these; the matching TypeScript
+// source of truth (labels + ordering for the UI) lives in lib/domain/tickets.ts.
+// ---------------------------------------------------------------------------
+
+enum Category {
+  BUG
+  FEATURE_REQUEST
+  IMPROVEMENT
+  QUESTION
+  GENERAL_FEEDBACK
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum Status {
+  NEW
+  REVIEWING
+  IN_PROGRESS
+  COMPLETED
+  CLOSED
+}
+
+// ---------------------------------------------------------------------------
+// A single piece of feedback submitted by an employee or customer.
+// ---------------------------------------------------------------------------
+
+model Ticket {
+  id             String   @id @default(cuid())
+  submitterName  String
+  submitterEmail String?
+  category       Category
+  priority       Priority
+  title          String
+  description    String
+  status         Status   @default(NEW)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  notes       InternalNote[]
+  attachments TicketAttachment[]
+
+  @@index([status])
+  @@index([category])
+  @@index([priority])
+  @@index([createdAt])
+}
+
+// An uploaded screenshot for a ticket. A ticket can have several.
+model TicketAttachment {
   id        String   @id @default(cuid())
-  name      String
+  ticketId  String
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  url       String
+  fileName  String?
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+
+  @@index([ticketId])
+}
+
+// A private note the admin adds to a ticket. A ticket can have several.
+model InternalNote {
+  id        String   @id @default(cuid())
+  ticketId  String
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([ticketId])
+}
+
+// The single administrator who signs in to manage feedback.
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
 }
