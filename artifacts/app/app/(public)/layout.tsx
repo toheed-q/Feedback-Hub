@@ -9,7 +9,7 @@ export default function PublicLayout({
       <SiteHeader />
       <div className="flex flex-1 flex-col">{children}</div>
       <footer className="border-t border-border/60">
-        <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-6 text-sm text-muted-foreground">
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-1.5 px-6 py-6 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
           <span>Feedback Hub</span>
           <span>Bugs · Feature requests · Ideas · Feedback</span>
         </div>

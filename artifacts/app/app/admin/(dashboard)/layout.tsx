@@ -17,18 +17,18 @@ export default async function AdminDashboardLayout({
         <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-6">
           <Link
             href="/admin"
-            className="flex items-center gap-2 font-semibold tracking-tight"
+            className="flex min-w-0 items-center gap-2 font-semibold tracking-tight"
           >
-            <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <MessagesSquare className="size-5" />
             </span>
-            <span>Feedback Hub</span>
-            <span className="rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
+            <span className="truncate whitespace-nowrap">Feedback Hub</span>
+            <span className="hidden shrink-0 rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium text-muted-foreground sm:inline-block">
               Admin
             </span>
           </Link>
 
-          <div className="flex items-center gap-3">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             {session?.user?.email && (
               <span className="hidden text-sm text-muted-foreground sm:inline">
                 {session.user.email}

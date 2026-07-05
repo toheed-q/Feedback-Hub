@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   CircleDot,
   CheckCircle2,
@@ -18,6 +19,7 @@ import {
   type Priority,
   type Status,
 } from "@/lib/domain/tickets";
+import { StatusBadge, PriorityBadge } from "@/components/ticket-badges";
 import { TicketFilters } from "@/components/admin/ticket-filters";
 import { TicketRow } from "@/components/admin/ticket-row";
 import {
@@ -138,47 +140,83 @@ export default async function AdminDashboard({
       <div className="rounded-xl border border-border bg-card">
         <TicketFilters />
 
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Title</TableHead>
-              <TableHead>Submitter</TableHead>
-              <TableHead>Priority</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Date</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {tickets.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="py-16 text-center">
-                  <Inbox className="mx-auto size-8 text-muted-foreground/60" />
-                  <p className="mt-3 text-sm font-medium text-foreground">
-                    No tickets found
-                  </p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {hasFilters
-                      ? "Try adjusting your search or filters."
-                      : "New submissions will appear here."}
-                  </p>
-                </TableCell>
-              </TableRow>
-            ) : (
-              tickets.map((t) => (
-                <TicketRow
-                  key={t.id}
-                  id={t.id}
-                  title={t.title}
-                  categoryLabel={CATEGORY_LABELS[t.category]}
-                  submitterName={t.submitterName}
-                  priority={t.priority}
-                  status={t.status}
-                  dateLabel={dateFmt.format(t.createdAt)}
-                />
-              ))
-            )}
-          </TableBody>
-        </Table>
+        {tickets.length === 0 ? (
+          <div className="py-16 text-center">
+            <Inbox className="mx-auto size-8 text-muted-foreground/60" />
+            <p className="mt-3 text-sm font-medium text-foreground">
+              No tickets found
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {hasFilters
+                ? "Try adjusting your search or filters."
+                : "New submissions will appear here."}
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* Mobile: stacked cards */}
+            <ul className="divide-y divide-border sm:hidden">
+              {tickets.map((t) => (
+                <li key={t.id}>
+                  <Link
+                    href={`/admin/tickets/${t.id}`}
+                    className="flex flex-col gap-2.5 p-4 transition-colors hover:bg-muted/50"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="font-medium text-foreground">
+                          {t.title}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {CATEGORY_LABELS[t.category]}
+                        </div>
+                      </div>
+                      <span className="shrink-0 text-xs text-muted-foreground">
+                        {dateFmt.format(t.createdAt)}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <PriorityBadge priority={t.priority} />
+                      <StatusBadge status={t.status} />
+                      <span className="ml-auto truncate text-xs text-muted-foreground">
+                        {t.submitterName}
+                      </span>
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+
+            {/* Desktop: table */}
+            <div className="hidden sm:block">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Submitter</TableHead>
+                    <TableHead>Priority</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Date</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {tickets.map((t) => (
+                    <TicketRow
+                      key={t.id}
+                      id={t.id}
+                      title={t.title}
+                      categoryLabel={CATEGORY_LABELS[t.category]}
+                      submitterName={t.submitterName}
+                      priority={t.priority}
+                      status={t.status}
+                      dateLabel={dateFmt.format(t.createdAt)}
+                    />
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
