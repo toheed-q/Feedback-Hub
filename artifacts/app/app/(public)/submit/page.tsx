@@ -45,6 +45,8 @@ function FieldError({ message }: { message?: string }) {
 export default function SubmitPage() {
   const [submitted, setSubmitted] = React.useState(false);
   const [serverError, setServerError] = React.useState<string | null>(null);
+  // Honeypot: a hidden field only bots fill in. Read on submit, never validated.
+  const honeypotRef = React.useRef<HTMLInputElement>(null);
 
   const {
     register,
@@ -69,7 +71,10 @@ export default function SubmitPage() {
       const res = await fetch("/api/tickets", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
+        body: JSON.stringify({
+          ...values,
+          website: honeypotRef.current?.value ?? "",
+        }),
       });
 
       if (!res.ok) {
@@ -145,6 +150,19 @@ export default function SubmitPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="grid gap-5" noValidate>
+            {/* Honeypot — hidden from real users; bots that auto-fill it are rejected. */}
+            <div aria-hidden="true" className="absolute -left-[9999px] top-0 h-0 w-0 overflow-hidden">
+              <label htmlFor="website">Website</label>
+              <input
+                ref={honeypotRef}
+                id="website"
+                name="website"
+                type="text"
+                tabIndex={-1}
+                autoComplete="off"
+              />
+            </div>
+
             {/* Name + Email */}
             <div className="grid gap-5 sm:grid-cols-2">
               <div className="grid gap-2">
