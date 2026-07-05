@@ -13,7 +13,7 @@ setup in place. Start from scratch or build on it?
 features replace it.
 
 **Why:** The setup already matches the stack I'd choose anyway and it works. Rebuilding it
-would only waste time and add risk for no real benefit..
+would only waste time and add risk for no real benefit
 
 ---
 
