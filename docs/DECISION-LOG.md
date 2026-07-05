@@ -119,6 +119,22 @@ like recent activity or guidance to the landing later without touching the form.
 
 ---
 
+## Keeping the public form open but spam-resistant
+
+**Problem:** The submission form is open to everyone (employees and customers) with no login,
+which is what the product needs — but that also means bots or bad actors could flood it with junk.
+
+**Decision I take:** Keep the form open, and protect it with two lightweight, invisible measures:
+a honeypot field that only automated bots fill in (real people never see it and leave it empty),
+and per-IP rate limiting that caps how many submissions one source can send in a short window.
+
+**Why:** Requiring a login would lock out the very customers the form exists to serve, so that's
+not an option. A honeypot plus rate limiting stops the large majority of spam with zero friction
+for real users and no third-party service or cost. A visible CAPTCHA was deliberately left out for
+now — it adds friction and is only worth adding if spam actually turns out to be a real problem.
+
+---
+
 ## Building in a clear order
 
 **Problem:** In what order should the features be built?

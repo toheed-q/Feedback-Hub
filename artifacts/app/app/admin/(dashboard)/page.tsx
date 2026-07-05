@@ -1,16 +1,25 @@
 import {
-  ChevronDown,
   CircleDot,
   CheckCircle2,
   Flame,
   CalendarPlus,
-  Search,
+  Inbox,
 } from "lucide-react";
 
 import { prisma } from "@/lib/prisma";
-import { OPEN_STATUSES, CATEGORY_LABELS } from "@/lib/domain/tickets";
-import { StatusBadge, PriorityBadge } from "@/components/ticket-badges";
-import { Input } from "@/components/ui/input";
+import type { Prisma } from "@/lib/generated/prisma/client";
+import {
+  OPEN_STATUSES,
+  CATEGORIES,
+  CATEGORY_LABELS,
+  PRIORITIES,
+  STATUSES,
+  type Category,
+  type Priority,
+  type Status,
+} from "@/lib/domain/tickets";
+import { TicketFilters } from "@/components/admin/ticket-filters";
+import { TicketRow } from "@/components/admin/ticket-row";
 import {
   Table,
   TableBody,
@@ -35,14 +44,14 @@ const SUMMARY_ICONS = {
   week: CalendarPlus,
 } as const;
 
-/** A read-only preview of the filter controls; wired up in the next unit. */
-function FakeSelect({ label }: { label: string }) {
-  return (
-    <div className="flex h-9 w-full items-center justify-between gap-2 rounded-lg border border-input bg-transparent px-3 text-sm text-muted-foreground sm:w-40 dark:bg-input/30">
-      {label}
-      <ChevronDown className="size-4" />
-    </div>
-  );
+/** Returns the value only if it's a member of the allowed list — guards URL params. */
+function pick<T extends string>(
+  value: string | string[] | undefined,
+  allowed: readonly T[],
+): T | undefined {
+  return typeof value === "string" && (allowed as readonly string[]).includes(value)
+    ? (value as T)
+    : undefined;
 }
 
 function SummaryCard({
@@ -68,9 +77,33 @@ function SummaryCard({
   );
 }
 
-export default async function AdminDashboard() {
-  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+export default async function AdminDashboard({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const sp = await searchParams;
+  const q = typeof sp.q === "string" ? sp.q.trim() : "";
+  const status = pick<Status>(sp.status, STATUSES);
+  const category = pick<Category>(sp.category, CATEGORIES);
+  const priority = pick<Priority>(sp.priority, PRIORITIES);
 
+  const where: Prisma.TicketWhereInput = {};
+  if (status) where.status = status;
+  if (category) where.category = category;
+  if (priority) where.priority = priority;
+  if (q) {
+    where.OR = [
+      { title: { contains: q, mode: "insensitive" } },
+      { description: { contains: q, mode: "insensitive" } },
+      { submitterName: { contains: q, mode: "insensitive" } },
+    ];
+  }
+
+  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const hasFilters = Boolean(q || status || category || priority);
+
+  // Summary cards reflect the whole workspace; only the table honours the filters.
   const [openCount, completedCount, highCount, newThisWeek, tickets] =
     await Promise.all([
       prisma.ticket.count({ where: { status: { in: [...OPEN_STATUSES] } } }),
@@ -79,7 +112,11 @@ export default async function AdminDashboard() {
         where: { priority: "HIGH", status: { in: [...OPEN_STATUSES] } },
       }),
       prisma.ticket.count({ where: { createdAt: { gte: weekAgo } } }),
-      prisma.ticket.findMany({ orderBy: { createdAt: "desc" }, take: 50 }),
+      prisma.ticket.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        take: 100,
+      }),
     ]);
 
   return (
@@ -91,7 +128,6 @@ export default async function AdminDashboard() {
         </p>
       </div>
 
-      {/* Summary cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <SummaryCard label="Open tickets" value={openCount} icon="open" />
         <SummaryCard label="Completed" value={completedCount} icon="completed" />
@@ -99,21 +135,8 @@ export default async function AdminDashboard() {
         <SummaryCard label="New this week" value={newThisWeek} icon="week" />
       </div>
 
-      {/* Filters + table */}
       <div className="rounded-xl border border-border bg-card">
-        <div className="flex flex-col gap-3 border-b border-border p-4 sm:flex-row sm:items-center">
-          <div className="relative flex-1">
-            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search tickets…"
-              className="h-9 pl-9"
-              disabled
-            />
-          </div>
-          <FakeSelect label="All statuses" />
-          <FakeSelect label="All categories" />
-          <FakeSelect label="All priorities" />
-        </div>
+        <TicketFilters />
 
         <Table>
           <TableHeader>
@@ -126,28 +149,34 @@ export default async function AdminDashboard() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {tickets.map((t) => (
-              <TableRow key={t.id} className="cursor-pointer">
-                <TableCell>
-                  <div className="font-medium text-foreground">{t.title}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {CATEGORY_LABELS[t.category]}
-                  </div>
-                </TableCell>
-                <TableCell className="text-muted-foreground">
-                  {t.submitterName}
-                </TableCell>
-                <TableCell>
-                  <PriorityBadge priority={t.priority} />
-                </TableCell>
-                <TableCell>
-                  <StatusBadge status={t.status} />
-                </TableCell>
-                <TableCell className="text-right text-muted-foreground">
-                  {dateFmt.format(t.createdAt)}
+            {tickets.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="py-16 text-center">
+                  <Inbox className="mx-auto size-8 text-muted-foreground/60" />
+                  <p className="mt-3 text-sm font-medium text-foreground">
+                    No tickets found
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {hasFilters
+                      ? "Try adjusting your search or filters."
+                      : "New submissions will appear here."}
+                  </p>
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              tickets.map((t) => (
+                <TicketRow
+                  key={t.id}
+                  id={t.id}
+                  title={t.title}
+                  categoryLabel={CATEGORY_LABELS[t.category]}
+                  submitterName={t.submitterName}
+                  priority={t.priority}
+                  status={t.status}
+                  dateLabel={dateFmt.format(t.createdAt)}
+                />
+              ))
+            )}
           </TableBody>
         </Table>
       </div>
