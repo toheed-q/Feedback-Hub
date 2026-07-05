@@ -44,6 +44,7 @@ function FieldError({ message }: { message?: string }) {
 
 export default function SubmitPage() {
   const [submitted, setSubmitted] = React.useState(false);
+  const [serverError, setServerError] = React.useState<string | null>(null);
 
   const {
     register,
@@ -63,10 +64,28 @@ export default function SubmitPage() {
   });
 
   async function onSubmit(values: CreateTicketInput) {
-    // Backend wiring comes in the next unit; for now we confirm the UX end-to-end.
-    void values;
-    await new Promise((r) => setTimeout(r, 600));
-    setSubmitted(true);
+    setServerError(null);
+    try {
+      const res = await fetch("/api/tickets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      });
+
+      if (!res.ok) {
+        const data = (await res.json().catch(() => null)) as
+          | { error?: string }
+          | null;
+        setServerError(data?.error ?? "Something went wrong. Please try again.");
+        return;
+      }
+
+      setSubmitted(true);
+    } catch {
+      setServerError(
+        "Couldn't reach the server. Check your connection and try again.",
+      );
+    }
   }
 
   if (submitted) {
@@ -255,6 +274,15 @@ export default function SubmitPage() {
               />
               <FieldError message={errors.description?.message} />
             </div>
+
+            {serverError && (
+              <div
+                role="alert"
+                className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+              >
+                {serverError}
+              </div>
+            )}
 
             <div className="flex justify-end pt-1">
               <Button type="submit" disabled={isSubmitting} className="h-9 px-5">

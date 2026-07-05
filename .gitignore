@@ -11,6 +11,12 @@ out-tsc
 # dependencies
 node_modules
 
+# Environment variables (never commit secrets)
+.env
+.env.local
+.env.*.local
+*.env
+
 # IDEs and editors
 /.idea
 .project
@@ -47,6 +53,6 @@ Thumbs.db
 # Replit
 .cache/
 .local/
-docs/screenshots/landing-light.png
-.gitignore
-docs/screenshots/landing-dark.png
+
+# Review screenshots — local only, never committed
+docs/screenshots/
