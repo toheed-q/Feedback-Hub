@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Loader2, TriangleAlert } from "lucide-react";
 
 import {
   createTicketSchema,
@@ -17,7 +17,9 @@ import {
   PRIORITY_LABELS,
   type Category,
   type Priority,
+  type Status,
 } from "@/lib/domain/tickets";
+import { StatusBadge } from "@/components/ticket-badges";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -45,18 +47,24 @@ function FieldError({ message }: { message?: string }) {
 
 export default function SubmitPage() {
   const [submitted, setSubmitted] = React.useState(false);
+  const [reference, setReference] = React.useState<string | null>(null);
   const [serverError, setServerError] = React.useState<string | null>(null);
   // Honeypot: a hidden field only bots fill in. Read on submit, never validated.
   const honeypotRef = React.useRef<HTMLInputElement>(null);
   const [screenshotUrls, setScreenshotUrls] = React.useState<string[]>([]);
   // Bumped on "Submit another" to remount the uploader with a clean slate.
   const [attemptKey, setAttemptKey] = React.useState(0);
+  // Duplicate hint: similar open tickets found as the title is typed.
+  const [similar, setSimilar] = React.useState<
+    { title: string; status: Status }[]
+  >([]);
 
   const {
     register,
     control,
     handleSubmit,
     reset,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<CreateTicketInput>({
     resolver: zodResolver(createTicketSchema),
@@ -68,6 +76,26 @@ export default function SubmitPage() {
       screenshotUrls: [],
     },
   });
+
+  const titleValue = watch("title");
+  React.useEffect(() => {
+    const q = (titleValue ?? "").trim();
+    if (q.length < 4) {
+      setSimilar([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `/api/tickets/similar?q=${encodeURIComponent(q)}`,
+        );
+        setSimilar(res.ok ? await res.json() : []);
+      } catch {
+        setSimilar([]);
+      }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [titleValue]);
 
   async function onSubmit(values: CreateTicketInput) {
     setServerError(null);
@@ -82,14 +110,16 @@ export default function SubmitPage() {
         }),
       });
 
+      const data = (await res.json().catch(() => null)) as
+        | { error?: string; reference?: string }
+        | null;
+
       if (!res.ok) {
-        const data = (await res.json().catch(() => null)) as
-          | { error?: string }
-          | null;
         setServerError(data?.error ?? "Something went wrong. Please try again.");
         return;
       }
 
+      setReference(data?.reference ?? null);
       setSubmitted(true);
     } catch {
       setServerError(
@@ -111,20 +141,36 @@ export default function SubmitPage() {
           Your feedback has been received. Our team reviews every submission and
           will follow up if we need more detail.
         </p>
+
+        {reference && (
+          <div className="mt-6 w-full rounded-lg border border-border bg-muted/40 px-4 py-3">
+            <p className="text-xs text-muted-foreground">Your reference</p>
+            <p className="mt-0.5 font-mono text-lg font-semibold tracking-wider text-foreground">
+              {reference}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Save this — you can track your feedback&apos;s status on the board
+              anytime.
+            </p>
+          </div>
+        )}
+
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+          <Link href="/feedback" className={buttonVariants({})}>
+            Track on the board
+          </Link>
           <Button
+            variant="outline"
             onClick={() => {
               reset();
               setSubmitted(false);
+              setReference(null);
               setScreenshotUrls([]);
               setAttemptKey((k) => k + 1);
             }}
           >
             Submit another
           </Button>
-          <Link href="/" className={buttonVariants({ variant: "outline" })}>
-            Back to home
-          </Link>
         </div>
       </main>
     );
@@ -283,6 +329,36 @@ export default function SubmitPage() {
                 {...register("title")}
               />
               <FieldError message={errors.title?.message} />
+
+              {similar.length > 0 && (
+                <div className="mt-1 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3">
+                  <div className="flex items-start gap-2">
+                    <TriangleAlert className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-500" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-foreground">
+                        This may already have been reported
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        If your issue is one of these, it&apos;s already being
+                        tracked. You can still submit if yours is different.
+                      </p>
+                      <ul className="mt-2 flex flex-col gap-1.5">
+                        {similar.map((s, i) => (
+                          <li
+                            key={i}
+                            className="flex items-center justify-between gap-2 text-sm"
+                          >
+                            <span className="truncate text-foreground">
+                              {s.title}
+                            </span>
+                            <StatusBadge status={s.status} />
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Description */}

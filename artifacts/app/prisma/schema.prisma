@@ -43,6 +43,7 @@ enum Status {
 
 model Ticket {
   id             String   @id @default(cuid())
+  reference      String?  @unique
   submitterName  String
   submitterEmail String?
   category       Category

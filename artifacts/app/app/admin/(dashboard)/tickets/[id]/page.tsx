@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Clock, Mail, User } from "lucide-react";
+import { ArrowLeft, Clock, Hash, Mail, User } from "lucide-react";
 
 import { prisma } from "@/lib/prisma";
 import { CATEGORY_LABELS } from "@/lib/domain/tickets";
@@ -137,6 +137,12 @@ export default async function TicketDetailPage({
           <section className="rounded-xl border border-border bg-card p-5">
             <h2 className="text-sm font-medium text-muted-foreground">Details</h2>
             <dl className="mt-3 flex flex-col gap-3 text-sm">
+              <div className="flex items-center gap-2">
+                <Hash className="size-4 shrink-0 text-muted-foreground" />
+                <span className="font-mono text-foreground">
+                  {ticket.reference}
+                </span>
+              </div>
               <div className="flex items-center gap-2">
                 <User className="size-4 shrink-0 text-muted-foreground" />
                 <span>{ticket.submitterName}</span>

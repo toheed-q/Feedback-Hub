@@ -20,6 +20,15 @@ export function SiteHeader() {
         </Link>
 
         <div className="flex shrink-0 items-center gap-1.5">
+          <Link
+            href="/feedback"
+            className={buttonVariants({
+              variant: "ghost",
+              className: "hidden h-9 px-3 sm:inline-flex",
+            })}
+          >
+            Board
+          </Link>
           <ModeToggle />
           <Link
             href="/submit"

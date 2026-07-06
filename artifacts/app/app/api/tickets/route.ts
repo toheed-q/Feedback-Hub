@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createTicketSchema } from "@/lib/validation/ticket";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
+import { generateReference } from "@/lib/reference";
 
 // Spam controls for the open public form.
 const RATE_LIMIT = 5; // submissions...
@@ -56,19 +57,32 @@ export async function POST(request: Request) {
   const { screenshotUrls, submitterEmail, ...rest } = parsed.data;
 
   try {
-    const ticket = await prisma.ticket.create({
-      data: {
-        ...rest,
-        // Store a blank email as null so "no email" is unambiguous in the DB.
-        submitterEmail: submitterEmail ? submitterEmail : null,
-        attachments: screenshotUrls?.length
-          ? { create: screenshotUrls.map((url) => ({ url })) }
-          : undefined,
-      },
-      select: { id: true },
-    });
+    // Retry a few times in the (astronomically unlikely) event of a reference clash.
+    for (let attempt = 0; ; attempt++) {
+      try {
+        const ticket = await prisma.ticket.create({
+          data: {
+            ...rest,
+            reference: generateReference(),
+            // Store a blank email as null so "no email" is unambiguous in the DB.
+            submitterEmail: submitterEmail ? submitterEmail : null,
+            attachments: screenshotUrls?.length
+              ? { create: screenshotUrls.map((url) => ({ url })) }
+              : undefined,
+          },
+          select: { id: true, reference: true },
+        });
 
-    return NextResponse.json({ id: ticket.id }, { status: 201 });
+        return NextResponse.json(
+          { id: ticket.id, reference: ticket.reference },
+          { status: 201 },
+        );
+      } catch (error) {
+        const isReferenceClash =
+          (error as { code?: string }).code === "P2002" && attempt < 4;
+        if (!isReferenceClash) throw error;
+      }
+    }
   } catch (error) {
     console.error("Failed to create ticket:", error);
     return NextResponse.json(

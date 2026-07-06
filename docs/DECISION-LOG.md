@@ -77,12 +77,18 @@ to add. Saving files to local disk would not survive a restart and would break i
 tickets that waste time and make submitters feel unheard.
 
 **Decision I take:** As someone types the title, quietly check for similar existing tickets and,
-if any are found, show them with their current status and let the person confirm whether it's
-the same issue or a new one.
+if any are found, show them with their current status and let the person confirm whether it's the
+same issue or a new one. The matching uses Postgres trigram similarity (the `pg_trgm` extension),
+which handles typos and slightly different wording well on short titles. Only active/open tickets
+are searched (closed ones aren't relevant anymore), and at most the top 5 closest matches are
+shown — and only their title and status, never the submitter or details.
 
 **Why:** Stopping a duplicate before it's created is a much better experience than cleaning it up
-later — and the submitter gets the reassurance that their issue is already being looked at. The
-matching uses the database's own search, so there's nothing extra to depend on.
+later — and the submitter gets the reassurance that their issue is already being looked at. Trigram
+similarity is the best fit for short feedback titles because it tolerates typos and word-order
+changes, and it needs nothing beyond a Postgres extension — no third-party AI or cost. Limiting the
+results to five open tickets, titles and status only, keeps it helpful without exposing the full
+feedback list.
 
 ---
 
@@ -132,6 +138,31 @@ and per-IP rate limiting that caps how many submissions one source can send in a
 not an option. A honeypot plus rate limiting stops the large majority of spam with zero friction
 for real users and no third-party service or cost. A visible CAPTCHA was deliberately left out for
 now — it adds friction and is only worth adding if spam actually turns out to be a real problem.
+
+---
+
+## A public feedback board with a short tracking reference
+
+**Problem:** People who submit feedback have no way to see what happened to it afterwards, and
+there's no shared view of what's already been reported.
+
+**Decision I take:** Every submission gets a short, friendly reference code (like `FH-7K3M9Q`) that
+is shown to the submitter on the confirmation screen and to the admin on the ticket. A public
+feedback board lists every submission with its title, category, status and date so anyone can
+track progress — but it never shows the submitter's name, email, or the full description. The
+reference codes are random and unguessable rather than sequential.
+
+**Why:** Email is optional on the form, so for anyone who doesn't leave one there's no way to reach
+back out — without a status they'd submit into a black hole and feel ghosted. A public board lets
+those people check progress themselves using just their reference code, so no email is ever
+required to stay informed. It also turns the form into something people trust and return to, and
+doubles as a lightweight roadmap of what's being worked on.
+
+Names, emails and descriptions are deliberately kept off the board: the board is public, and a
+submitter's identity or the details of what they reported can be sensitive, so exposing them would
+be a privacy risk. Showing only the reference, title, category, status and date gives people
+everything they need to track their item while revealing nothing personal. The reference codes are
+random rather than sequential so no one can enumerate them to read the whole feedback list.
 
 ---
 

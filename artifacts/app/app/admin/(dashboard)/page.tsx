@@ -99,6 +99,7 @@ export default async function AdminDashboard({
       { title: { contains: q, mode: "insensitive" } },
       { description: { contains: q, mode: "insensitive" } },
       { submitterName: { contains: q, mode: "insensitive" } },
+      { reference: { contains: q, mode: "insensitive" } },
     ];
   }
 
