@@ -29,11 +29,13 @@ export async function GET(request: Request) {
   }
 
   try {
+    // Search tickets of every status: an open match means "already tracked", while a
+    // Completed/Closed match tells the submitter it was fixed or already decided (and
+    // helps them flag a possible regression). The status badge conveys which it is.
     const rows = await prisma.$queryRaw<SimilarTicket[]>`
       SELECT title, status
       FROM "Ticket"
-      WHERE status IN ('NEW', 'REVIEWING', 'IN_PROGRESS')
-        AND word_similarity(${q}, title) > ${SIMILARITY_THRESHOLD}
+      WHERE word_similarity(${q}, title) > ${SIMILARITY_THRESHOLD}
       ORDER BY word_similarity(${q}, title) DESC
       LIMIT 5
     `;

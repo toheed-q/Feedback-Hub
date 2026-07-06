@@ -79,16 +79,21 @@ tickets that waste time and make submitters feel unheard.
 **Decision I take:** As someone types the title, quietly check for similar existing tickets and,
 if any are found, show them with their current status and let the person confirm whether it's the
 same issue or a new one. The matching uses Postgres trigram similarity (the `pg_trgm` extension),
-which handles typos and slightly different wording well on short titles. Only active/open tickets
-are searched (closed ones aren't relevant anymore), and at most the top 5 closest matches are
-shown — and only their title and status, never the submitter or details.
+which handles typos and slightly different wording well on short titles. Tickets of **every**
+status are searched — not just open ones — and at most the top 5 closest matches are shown, and
+only their title and status, never the submitter or details.
 
 **Why:** Stopping a duplicate before it's created is a much better experience than cleaning it up
 later — and the submitter gets the reassurance that their issue is already being looked at. Trigram
 similarity is the best fit for short feedback titles because it tolerates typos and word-order
 changes, and it needs nothing beyond a Postgres extension — no third-party AI or cost. Limiting the
-results to five open tickets, titles and status only, keeps it helpful without exposing the full
-feedback list.
+results to five, titles and status only, keeps it helpful without exposing the full feedback list.
+
+Closed and completed matches are shown too, not only open ones: if something was already fixed and
+a user reports it again, seeing the "Completed" status tells them it should be resolved — or flags
+a possible regression worth noting — and a "Closed" status tells them it was already considered.
+Just as importantly, surfacing every match (rather than silently blocking) is what lets us see how
+often the same thing gets asked for, which feeds the admin's view of the most-demanded requests.
 
 ---
 

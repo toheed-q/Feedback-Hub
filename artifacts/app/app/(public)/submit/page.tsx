@@ -383,11 +383,11 @@ export default function SubmitPage() {
                     <TriangleAlert className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-500" />
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-foreground">
-                        This may already have been reported
+                        We found similar tickets
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        If your issue is one of these, it&apos;s already being
-                        tracked. You can still submit if yours is different.
+                        Check the status below. You can still submit if yours is
+                        different or you&apos;re seeing it again.
                       </p>
                       <ul className="mt-2 flex flex-col gap-1.5">
                         {similar.map((s, i) => (
