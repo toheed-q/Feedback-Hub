@@ -71,16 +71,22 @@ export default async function TicketDetailPage({
               <h2 className="text-sm font-medium text-muted-foreground">
                 Screenshots
               </h2>
-              <div className="mt-3 flex flex-col gap-2">
+              <div className="mt-3 flex flex-wrap gap-3">
                 {ticket.attachments.map((a) => (
                   <a
                     key={a.id}
                     href={a.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-primary hover:underline"
+                    title="Open full image"
+                    className="block size-24 overflow-hidden rounded-lg border border-border transition-colors hover:border-primary/40"
                   >
-                    {a.fileName ?? "Attachment"}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={a.url}
+                      alt={a.fileName ?? "Screenshot"}
+                      className="size-full object-cover"
+                    />
                   </a>
                 ))}
               </div>

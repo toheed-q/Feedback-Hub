@@ -36,6 +36,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ScreenshotUploader } from "@/components/screenshot-uploader";
 
 function FieldError({ message }: { message?: string }) {
   if (!message) return null;
@@ -47,6 +48,9 @@ export default function SubmitPage() {
   const [serverError, setServerError] = React.useState<string | null>(null);
   // Honeypot: a hidden field only bots fill in. Read on submit, never validated.
   const honeypotRef = React.useRef<HTMLInputElement>(null);
+  const [screenshotUrls, setScreenshotUrls] = React.useState<string[]>([]);
+  // Bumped on "Submit another" to remount the uploader with a clean slate.
+  const [attemptKey, setAttemptKey] = React.useState(0);
 
   const {
     register,
@@ -73,6 +77,7 @@ export default function SubmitPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...values,
+          screenshotUrls,
           website: honeypotRef.current?.value ?? "",
         }),
       });
@@ -111,6 +116,8 @@ export default function SubmitPage() {
             onClick={() => {
               reset();
               setSubmitted(false);
+              setScreenshotUrls([]);
+              setAttemptKey((k) => k + 1);
             }}
           >
             Submit another
@@ -291,6 +298,12 @@ export default function SubmitPage() {
                 {...register("description")}
               />
               <FieldError message={errors.description?.message} />
+            </div>
+
+            {/* Screenshots */}
+            <div className="grid gap-2">
+              <Label>Screenshots (optional)</Label>
+              <ScreenshotUploader key={attemptKey} onChange={setScreenshotUrls} />
             </div>
 
             {serverError && (
