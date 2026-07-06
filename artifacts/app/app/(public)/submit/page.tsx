@@ -4,7 +4,19 @@ import * as React from "react";
 import Link from "next/link";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, CheckCircle2, Loader2, TriangleAlert } from "lucide-react";
+import {
+  ArrowRight,
+  Bug,
+  CheckCircle2,
+  HelpCircle,
+  Loader2,
+  MessageSquare,
+  PenLine,
+  Search,
+  Sparkles,
+  TrendingUp,
+  TriangleAlert,
+} from "lucide-react";
 
 import {
   createTicketSchema,
@@ -15,30 +27,47 @@ import {
   CATEGORY_LABELS,
   PRIORITIES,
   PRIORITY_LABELS,
-  type Category,
-  type Priority,
   type Status,
 } from "@/lib/domain/tickets";
-import { StatusBadge } from "@/components/ticket-badges";
+import { cn } from "@/lib/utils";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { StatusBadge } from "@/components/ticket-badges";
 import { ScreenshotUploader } from "@/components/screenshot-uploader";
+
+const CATEGORY_ICONS = {
+  BUG: Bug,
+  FEATURE_REQUEST: Sparkles,
+  IMPROVEMENT: TrendingUp,
+  QUESTION: HelpCircle,
+  GENERAL_FEEDBACK: MessageSquare,
+} as const;
+
+const PRIORITY_SELECTED: Record<string, string> = {
+  LOW: "bg-zinc-500 text-white",
+  MEDIUM: "bg-amber-500 text-white",
+  HIGH: "bg-rose-500 text-white",
+};
+
+const STEPS = [
+  {
+    icon: PenLine,
+    title: "You file a ticket",
+    body: "Pick a category, set the priority honestly, describe what you saw.",
+  },
+  {
+    icon: Search,
+    title: "We triage it",
+    body: "Every ticket is reviewed and moved through New → Reviewing → In Progress.",
+  },
+  {
+    icon: CheckCircle2,
+    title: "It gets shipped",
+    body: "Bugs get fixed, good ideas get built. Leave an email to hear back.",
+  },
+] as const;
 
 function FieldError({ message }: { message?: string }) {
   if (!message) return null;
@@ -177,34 +206,43 @@ export default function SubmitPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-12">
-      <Link
-        href="/"
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-      >
-        <ArrowLeft className="size-4" />
-        Back
-      </Link>
-
-      <div className="mt-4 mb-8">
-        <h1 className="text-3xl font-semibold tracking-tight">Submit Feedback</h1>
-        <p className="mt-2 text-muted-foreground">
-          Report a bug, request a feature, or share an idea. Fields marked with{" "}
-          <span className="text-destructive">*</span> are required.
+    <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-12 sm:py-16">
+      {/* Hero */}
+      <div className="max-w-2xl">
+        <h1 className="text-4xl font-semibold leading-[1.1] tracking-tight sm:text-5xl">
+          Spotted a bug?
+          <br />
+          Got an <span className="text-primary">idea?</span> File a ticket.
+        </h1>
+        <p className="mt-4 text-lg text-muted-foreground">
+          Every submission gets a ticket number and lands straight on our review
+          board. Takes about a minute — no account needed.
         </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Tell us what&apos;s on your mind</CardTitle>
-          <CardDescription>
-            The more detail you give, the faster we can act on it.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="grid gap-5" noValidate>
-            {/* Honeypot — hidden from real users; bots that auto-fill it are rejected. */}
-            <div aria-hidden="true" className="absolute -left-[9999px] top-0 h-0 w-0 overflow-hidden">
+      <div className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_19rem]">
+        {/* Form slip */}
+        <div className="rounded-2xl border border-border bg-card p-6 sm:p-8">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold tracking-tight">
+              New submission
+            </h2>
+            <span className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
+              Slip
+            </span>
+          </div>
+          <div className="my-5 border-t border-dashed border-border" />
+
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="grid gap-5"
+            noValidate
+          >
+            {/* Honeypot — hidden from real users. */}
+            <div
+              aria-hidden="true"
+              className="absolute -left-[9999px] top-0 h-0 w-0 overflow-hidden"
+            >
               <label htmlFor="website">Website</label>
               <input
                 ref={honeypotRef}
@@ -224,7 +262,7 @@ export default function SubmitPage() {
                 </Label>
                 <Input
                   id="submitterName"
-                  placeholder="Jane Doe"
+                  placeholder="Your name"
                   aria-invalid={!!errors.submitterName}
                   {...register("submitterName")}
                 />
@@ -232,89 +270,98 @@ export default function SubmitPage() {
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="submitterEmail">Email (optional)</Label>
+                <Label htmlFor="submitterEmail">
+                  Email{" "}
+                  <span className="font-normal text-muted-foreground">
+                    (optional)
+                  </span>
+                </Label>
                 <Input
                   id="submitterEmail"
                   type="email"
-                  placeholder="jane@company.com"
+                  placeholder="you@company.com"
                   aria-invalid={!!errors.submitterEmail}
                   {...register("submitterEmail")}
                 />
+                <p className="text-xs text-muted-foreground">
+                  Only used if we need more details.
+                </p>
                 <FieldError message={errors.submitterEmail?.message} />
               </div>
             </div>
 
-            {/* Category + Priority */}
-            <div className="grid gap-5 sm:grid-cols-2">
-              <div className="grid gap-2">
-                <Label>
-                  Category <span className="text-destructive">*</span>
-                </Label>
-                <Controller
-                  control={control}
-                  name="category"
-                  render={({ field }) => (
-                    <Select
-                      value={field.value ?? null}
-                      onValueChange={field.onChange}
-                    >
-                      <SelectTrigger
-                        className="w-full"
-                        aria-invalid={!!errors.category}
-                      >
-                        <SelectValue placeholder="Select a category">
-                          {(value: Category | null) =>
-                            value ? CATEGORY_LABELS[value] : "Select a category"
-                          }
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent>
-                        {CATEGORIES.map((c) => (
-                          <SelectItem key={c} value={c}>
-                            {CATEGORY_LABELS[c]}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-                <FieldError message={errors.category?.message} />
-              </div>
+            {/* Category pills */}
+            <div className="grid gap-2">
+              <Label>
+                Category <span className="text-destructive">*</span>
+              </Label>
+              <Controller
+                control={control}
+                name="category"
+                render={({ field }) => (
+                  <div className="flex flex-wrap gap-2">
+                    {CATEGORIES.map((c) => {
+                      const Icon = CATEGORY_ICONS[c];
+                      const selected = field.value === c;
+                      return (
+                        <button
+                          type="button"
+                          key={c}
+                          onClick={() => field.onChange(c)}
+                          className={cn(
+                            "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors",
+                            selected
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-border bg-background text-foreground hover:bg-muted",
+                          )}
+                        >
+                          <Icon className="size-3.5" />
+                          {CATEGORY_LABELS[c]}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              />
+              <FieldError message={errors.category?.message} />
+            </div>
 
-              <div className="grid gap-2">
-                <Label>
-                  Priority <span className="text-destructive">*</span>
-                </Label>
-                <Controller
-                  control={control}
-                  name="priority"
-                  render={({ field }) => (
-                    <Select
-                      value={field.value ?? null}
-                      onValueChange={field.onChange}
-                    >
-                      <SelectTrigger
-                        className="w-full"
-                        aria-invalid={!!errors.priority}
-                      >
-                        <SelectValue placeholder="Select a priority">
-                          {(value: Priority | null) =>
-                            value ? PRIORITY_LABELS[value] : "Select a priority"
-                          }
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent>
-                        {PRIORITIES.map((p) => (
-                          <SelectItem key={p} value={p}>
-                            {PRIORITY_LABELS[p]}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-                <FieldError message={errors.priority?.message} />
-              </div>
+            {/* Priority segmented control */}
+            <div className="grid gap-2">
+              <Label>
+                Priority <span className="text-destructive">*</span>
+              </Label>
+              <Controller
+                control={control}
+                name="priority"
+                render={({ field }) => (
+                  <div className="grid grid-cols-3 overflow-hidden rounded-lg border border-border">
+                    {PRIORITIES.map((pr, i) => {
+                      const selected = field.value === pr;
+                      return (
+                        <button
+                          type="button"
+                          key={pr}
+                          onClick={() => field.onChange(pr)}
+                          className={cn(
+                            "py-2.5 text-sm font-medium transition-colors",
+                            i > 0 && "border-l border-border",
+                            selected
+                              ? PRIORITY_SELECTED[pr]
+                              : "bg-background text-foreground hover:bg-muted",
+                          )}
+                        >
+                          {PRIORITY_LABELS[pr]}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              />
+              <p className="text-xs text-muted-foreground">
+                High = something is blocked or broken for you right now.
+              </p>
+              <FieldError message={errors.priority?.message} />
             </div>
 
             {/* Title */}
@@ -324,7 +371,7 @@ export default function SubmitPage() {
               </Label>
               <Input
                 id="title"
-                placeholder="Short summary of your feedback"
+                placeholder={`One line summary, e.g. "Export button fails on Reports page"`}
                 aria-invalid={!!errors.title}
                 {...register("title")}
               />
@@ -368,8 +415,8 @@ export default function SubmitPage() {
               </Label>
               <Textarea
                 id="description"
-                rows={6}
-                placeholder="Describe what happened, what you expected, and any steps to reproduce."
+                rows={5}
+                placeholder="What happened? What did you expect? Steps to reproduce help a lot."
                 aria-invalid={!!errors.description}
                 {...register("description")}
               />
@@ -378,28 +425,63 @@ export default function SubmitPage() {
 
             {/* Screenshots */}
             <div className="grid gap-2">
-              <Label>Screenshots (optional)</Label>
+              <Label>
+                Screenshot{" "}
+                <span className="font-normal text-muted-foreground">
+                  (optional)
+                </span>
+              </Label>
               <ScreenshotUploader key={attemptKey} onChange={setScreenshotUrls} />
             </div>
 
-            {serverError && (
-              <div
-                role="alert"
-                className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-              >
-                {serverError}
+            <div className="border-t border-dashed border-border pt-5">
+              <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-sm text-muted-foreground">
+                Fields marked with{" "}
+                <span className="text-destructive">*</span> are required. Your
+                ticket is timestamped automatically.
               </div>
-            )}
 
-            <div className="flex justify-end pt-1">
-              <Button type="submit" disabled={isSubmitting} className="h-9 px-5">
+              {serverError && (
+                <div
+                  role="alert"
+                  className="mt-3 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                >
+                  {serverError}
+                </div>
+              )}
+
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="mt-4 h-10 gap-2 px-5 text-base"
+              >
                 {isSubmitting && <Loader2 className="size-4 animate-spin" />}
-                {isSubmitting ? "Submitting…" : "Submit Feedback"}
+                {isSubmitting ? "Submitting…" : "Submit feedback"}
+                {!isSubmitting && <ArrowRight className="size-4" />}
               </Button>
             </div>
           </form>
-        </CardContent>
-      </Card>
+        </div>
+
+        {/* How it works */}
+        <aside className="flex flex-col gap-6 lg:pt-2">
+          {STEPS.map((step, i) => (
+            <div key={step.title} className="flex gap-3">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border bg-card text-primary">
+                <step.icon className="size-4" />
+              </span>
+              <div>
+                <p className="text-sm font-semibold text-foreground">
+                  {i + 1} · {step.title}
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {step.body}
+                </p>
+              </div>
+            </div>
+          ))}
+        </aside>
+      </div>
     </main>
   );
 }

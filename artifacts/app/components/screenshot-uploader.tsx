@@ -1,7 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { ImagePlus, Loader2, X, AlertCircle } from "lucide-react";
+import { ImageIcon, Loader2, X, AlertCircle } from "lucide-react";
+
+import { cn } from "@/lib/utils";
 
 const ALLOWED = ["image/png", "image/jpeg", "image/webp", "image/gif"];
 const MAX_BYTES = 5 * 1024 * 1024;
@@ -22,6 +24,7 @@ export function ScreenshotUploader({
   onChange: (urls: string[]) => void;
 }) {
   const [items, setItems] = React.useState<Item[]>([]);
+  const [dragging, setDragging] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
@@ -152,10 +155,28 @@ export function ScreenshotUploader({
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-input px-3 py-4 text-sm text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragging(true);
+          }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragging(false);
+            handleFiles(e.dataTransfer.files);
+          }}
+          className={cn(
+            "flex w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed px-3 py-8 text-sm transition-colors",
+            dragging
+              ? "border-primary bg-primary/5 text-foreground"
+              : "border-input text-muted-foreground hover:border-primary/40 hover:text-foreground",
+          )}
         >
-          <ImagePlus className="size-4" />
-          Add screenshots
+          <ImageIcon className="size-6 text-muted-foreground" />
+          <span>
+            Drop an image here, or{" "}
+            <span className="font-medium text-primary">browse</span>
+          </span>
         </button>
       )}
 
