@@ -19,23 +19,24 @@ export function SiteHeader() {
           <span className="truncate whitespace-nowrap">Feedback Hub</span>
         </Link>
 
-        <div className="flex shrink-0 items-center gap-1.5">
+        <div className="flex shrink-0 items-center gap-3 sm:gap-5">
           <Link
             href="/feedback"
-            className={buttonVariants({
-              variant: "ghost",
-              className: "hidden h-9 px-3 sm:inline-flex",
-            })}
+            className="hidden text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:inline"
           >
-            Board
+            Feedback board
           </Link>
-          <ModeToggle />
-          <Link
-            href="/submit"
-            className={buttonVariants({ className: "h-9 whitespace-nowrap px-4" })}
-          >
-            Submit Feedback
-          </Link>
+          <div className="flex items-center gap-1.5">
+            <ModeToggle />
+            <Link
+              href="/submit"
+              className={buttonVariants({
+                className: "h-9 whitespace-nowrap px-4",
+              })}
+            >
+              Submit Feedback
+            </Link>
+          </div>
         </div>
       </div>
     </header>

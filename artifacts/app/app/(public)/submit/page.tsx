@@ -255,7 +255,7 @@ export default function SubmitPage() {
             </div>
 
             {/* Name + Email */}
-            <div className="grid gap-5 sm:grid-cols-2">
+            <div className="grid gap-5 sm:grid-cols-2 sm:items-start">
               <div className="grid gap-2">
                 <Label htmlFor="submitterName">
                   Name <span className="text-destructive">*</span>
